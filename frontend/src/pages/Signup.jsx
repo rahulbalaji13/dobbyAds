@@ -1,0 +1,50 @@
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+
+export default function Signup() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { signup } = useAuth();
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await signup(email, password);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Signup failed');
+    }
+  };
+
+  return (
+    <div className="auth-container">
+      <div className="card auth-card">
+        <h2 style={{ marginBottom: '1.5rem', textAlign: 'center' }}>Create Account</h2>
+        {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
+        <form onSubmit={handleSubmit}>
+          <input
+            type="email"
+            placeholder="Email"
+            className="input"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button type="submit" className="btn" style={{ width: '100%' }}>Sign Up</button>
+        </form>
+        <p style={{ marginTop: '1rem', textAlign: 'center' }}>
+          Already have an account? <Link to="/login">Login</Link>
+        </p>
+      </div>
+    </div>
+  );
+}
