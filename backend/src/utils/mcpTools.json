@@ -1,0 +1,40 @@
+{
+  "tools": [
+    {
+      "name": "createFolder",
+      "description": "Creates a new folder in the virtual file system. Use this when the user asks to create a directory or folder.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name of the new folder."
+          },
+          "parentId": {
+            "type": "string",
+            "description": "The ID of the parent folder. Pass null if creating at the root level."
+          }
+        },
+        "required": ["name"]
+      }
+    },
+    {
+      "name": "uploadImage",
+      "description": "Uploads an image file to a specific folder. Use this when the user asks to upload or save an image.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "folderId": {
+            "type": "string",
+            "description": "The ID of the folder where the image should be uploaded. Pass null for root level."
+          },
+          "filePath": {
+            "type": "string",
+            "description": "The local absolute path to the image file to be uploaded."
+          }
+        },
+        "required": ["filePath"]
+      }
+    }
+  ]
+}
