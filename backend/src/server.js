@@ -8,16 +8,20 @@ const PORT = process.env.PORT || 5000;
 async function startServer() {
   try {
     let mongoUri = process.env.MONGODB_URI;
-    
-    // If no explicit MongoDB URI or it's the default local one without a running instance, use in-memory
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    if (isProduction && !mongoUri) {
+      throw new Error('MONGODB_URI is required in production.');
+    }
+
     if (!mongoUri || mongoUri === 'mongodb://localhost:27017/folder-system') {
-      console.log('Starting in-memory MongoDB instance...');
+      console.log('Starting in-memory MongoDB instance for local development...');
       const mongoServer = await MongoMemoryServer.create();
       mongoUri = mongoServer.getUri();
     }
 
     await mongoose.connect(mongoUri);
-    console.log('Connected to MongoDB at', mongoUri);
+    console.log('Connected to MongoDB');
 
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
