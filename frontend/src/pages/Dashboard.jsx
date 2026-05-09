@@ -2,8 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Folder, File, Upload, Plus, LogOut, ArrowLeft, Info } from 'lucide-react';
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+import { api as sharedApi, API_BASE_URL } from '../lib/api';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -16,7 +15,7 @@ export default function Dashboard() {
 
   const api = useMemo(() => {
     return axios.create({
-      baseURL: API_BASE_URL,
+      baseURL: sharedApi.defaults.baseURL,
       headers: { Authorization: `Bearer ${user?.token}` },
     });
   }, [user?.token]);
