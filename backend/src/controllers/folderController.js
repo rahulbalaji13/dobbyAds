@@ -20,7 +20,7 @@ exports.getFolders = async (req, res) => {
   try {
     const parentId = req.query.parentId || null;
     const folders = await Folder.find({ user: req.user._id, parent: parentId });
-    const files = await File.find({ user: req.user._id, folder: parentId });
+    const files = await File.find({ user: req.user._id, folder: parentId }).select('-data');
     res.json({ folders, files });
   } catch (error) {
     res.status(500).json({ message: error.message });
