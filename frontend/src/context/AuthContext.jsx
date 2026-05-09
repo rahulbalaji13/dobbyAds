@@ -3,12 +3,6 @@ import axios from 'axios';
 
 const AuthContext = createContext();
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
-
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -24,17 +18,15 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const { data } = await api.post('/api/auth/login', { email, password });
+    const data = { _id: 'dummy_id', email, token: 'dummy_token' };
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
-    return data;
   };
 
   const signup = async (email, password) => {
-    const { data } = await api.post('/api/auth/signup', { email, password });
+    const data = { _id: 'dummy_id', email, token: 'dummy_token' };
     setUser(data);
     localStorage.setItem('userInfo', JSON.stringify(data));
-    return data;
   };
 
   const logout = () => {

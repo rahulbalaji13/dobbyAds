@@ -1,12 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Folder, File, Upload, Plus, LogOut, ArrowLeft, Info } from 'lucide-react';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-
 export default function Dashboard() {
   const { user, logout } = useAuth();
+  const [allFolders, setAllFolders] = useState([]);
+  const [allFiles, setAllFiles] = useState([]);
   const [folders, setFolders] = useState([]);
   const [files, setFiles] = useState([]);
   const [currentFolder, setCurrentFolder] = useState(null);
@@ -14,76 +13,69 @@ export default function Dashboard() {
   const [newFolderName, setNewFolderName] = useState('');
   const [folderSize, setFolderSize] = useState(null);
 
-  const api = useMemo(() => {
-    return axios.create({
-      baseURL: API_BASE_URL,
-      headers: { Authorization: `Bearer ${user?.token}` },
-    });
-  }, [user?.token]);
-
-  const fetchContents = async (folderId = null) => {
-    const params = folderId ? { parentId: folderId } : {};
-    const { data } = await api.get('/api/folders', { params });
-    setFolders(data.folders || []);
-    setFiles(data.files || []);
+  const fetchContents = (folderId = null) => {
+    setFolders(allFolders.filter(f => f.parentId === folderId));
+    setFiles(allFiles.filter(f => f.parentId === folderId));
     setFolderSize(null);
   };
 
   useEffect(() => {
-    if (user?.token) {
-      fetchContents(currentFolder?._id || null);
-    }
-  }, [currentFolder, user?.token]);
+    fetchContents(currentFolder?._id || null);
+  }, [currentFolder, allFolders, allFiles]);
 
-  const handleCreateFolder = async (e) => {
+  const handleCreateFolder = (e) => {
     e.preventDefault();
-    if (!newFolderName.trim()) return;
-
-    await api.post('/api/folders', {
-      name: newFolderName.trim(),
-      parentId: currentFolder?._id || null,
-    });
-
+    if (!newFolderName) return;
+    const newFolder = {
+      _id: Date.now().toString(),
+      name: newFolderName,
+      parentId: currentFolder?._id || null
+    };
+    setAllFolders([...allFolders, newFolder]);
     setNewFolderName('');
-    await fetchContents(currentFolder?._id || null);
   };
 
-  const handleFileUpload = async (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile) return;
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    const formData = new FormData();
-    formData.append('file', selectedFile);
-    if (currentFolder?._id) {
-      formData.append('folderId', currentFolder._id);
-    }
-
-    await api.post('/api/files/upload', formData, {
-      headers: {
-        Authorization: `Bearer ${user?.token}`,
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    e.target.value = '';
-    await fetchContents(currentFolder?._id || null);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const newFile = {
+        _id: Date.now().toString(),
+        name: file.name,
+        size: file.size,
+        url: event.target.result,
+        parentId: currentFolder?._id || null
+      };
+      setAllFiles(prev => [...prev, newFile]);
+    };
+    reader.readAsDataURL(file);
   };
 
   const navigateToFolder = (folder) => {
-    setFolderHistory((prev) => [...prev, currentFolder]);
+    setFolderHistory([...folderHistory, currentFolder]);
     setCurrentFolder(folder);
   };
 
   const goBack = () => {
-    const prevFolder = folderHistory[folderHistory.length - 1] || null;
-    setFolderHistory((prev) => prev.slice(0, -1));
+    const prevFolder = folderHistory[folderHistory.length - 1];
+    const newHistory = folderHistory.slice(0, -1);
+    setFolderHistory(newHistory);
     setCurrentFolder(prevFolder);
   };
 
-  const calculateSize = async () => {
+  const calculateSize = () => {
     if (!currentFolder) return;
-    const { data } = await api.get(`/api/folders/${currentFolder._id}/size`);
-    setFolderSize(data.size);
+    let totalSize = 0;
+    const calculate = (folderId) => {
+      const fFiles = allFiles.filter(f => f.parentId === folderId);
+      totalSize += fFiles.reduce((acc, curr) => acc + curr.size, 0);
+      const subFolders = allFolders.filter(f => f.parentId === folderId);
+      subFolders.forEach(sf => calculate(sf._id));
+    };
+    calculate(currentFolder._id);
+    setFolderSize(totalSize);
   };
 
   const formatBytes = (bytes, decimals = 2) => {
@@ -110,11 +102,8 @@ export default function Dashboard() {
               </button>
               {folderSize !== null && <span style={{ fontSize: '1rem', fontWeight: 'normal', marginLeft: '1rem' }}>({formatBytes(folderSize)})</span>}
             </>
-          ) : (
-            'My Drive'
-          )}
+          ) : 'My Drive'}
         </div>
-
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <span>{user.email}</span>
           <button onClick={logout} className="btn" style={{ background: '#EF4444', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -147,10 +136,10 @@ export default function Dashboard() {
       <h3 style={{ marginBottom: '1rem' }}>Folders</h3>
       <div className="grid" style={{ marginBottom: '2rem' }}>
         {folders.length === 0 && <p style={{ color: 'gray' }}>No folders</p>}
-        {folders.map((folder) => (
-          <div key={folder._id} className="folder-item" onDoubleClick={() => navigateToFolder(folder)}>
+        {folders.map(f => (
+          <div key={f._id} className="folder-item" onDoubleClick={() => navigateToFolder(f)}>
             <Folder className="icon" fill="#FBBF24" color="#F59E0B" />
-            <span style={{ fontWeight: 500 }}>{folder.name}</span>
+            <span style={{ fontWeight: 500 }}>{f.name}</span>
           </div>
         ))}
       </div>
@@ -158,16 +147,16 @@ export default function Dashboard() {
       <h3 style={{ marginBottom: '1rem' }}>Files</h3>
       <div className="grid">
         {files.length === 0 && <p style={{ color: 'gray' }}>No files</p>}
-        {files.map((file) => (
-          <div key={file._id} className="file-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+        {files.map(f => (
+          <div key={f._id} className="file-item" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.5rem', width: '100%' }}>
               <File className="icon" color="#3B82F6" />
-              <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</span>
+              <span style={{ fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</span>
             </div>
-            {(file.name.match(/\.(jpeg|jpg|gif|png)$/i) || file.url?.includes('files/content')) && (
-              <img src={`${API_BASE_URL}${file.url}`} alt={file.name} style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '4px' }} />
+            {(f.name.match(/\.(jpeg|jpg|gif|png)$/i) || f.url.startsWith('data:image')) && (
+              <img src={f.url} alt={f.name} style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: '4px' }} />
             )}
-            <span style={{ fontSize: '0.8rem', color: 'gray', marginTop: '0.5rem' }}>{formatBytes(file.size)}</span>
+            <span style={{ fontSize: '0.8rem', color: 'gray', marginTop: '0.5rem' }}>{formatBytes(f.size)}</span>
           </div>
         ))}
       </div>
