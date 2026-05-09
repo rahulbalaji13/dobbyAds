@@ -3,7 +3,10 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Folder, File, Upload, Plus, LogOut, ArrowLeft, Info } from 'lucide-react';
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const normalize = (value) => (value || '').replace(/\/$/, '');
+const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+const envBase = normalize(import.meta.env.VITE_API_BASE_URL);
+const API_BASE_URL = envBase || (runtimeOrigin.includes('localhost') ? 'http://localhost:5000' : 'https://dobbyads.onrender.com');
 
 export default function Dashboard() {
   const { user, logout } = useAuth();

@@ -1,13 +1,16 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
-const AuthContext = createContext();
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+const normalize = (value) => (value || '').replace(/\/$/, '');
+const runtimeOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+const envBase = normalize(import.meta.env.VITE_API_BASE_URL);
+const API_BASE_URL = envBase || (runtimeOrigin.includes('localhost') ? 'http://localhost:5000' : 'https://dobbyads.onrender.com');
 
 const api = axios.create({
   baseURL: API_BASE_URL,
 });
+
+const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 

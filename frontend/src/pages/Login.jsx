@@ -13,7 +13,8 @@ export default function Login() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      const message = err.response?.data?.message || err.message || 'Login failed';
+      setError(message);
     }
   };
 

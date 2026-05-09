@@ -11,10 +11,6 @@ const protect = async (req, res, next) => {
   }
 
   try {
-    if (token === 'dummy_token') {
-      req.user = { _id: 'dummy_id' };
-      return next();
-    }
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'supersecret_jwt_key_that_should_be_long');
     req.user = { _id: decoded.id };
     next();

@@ -13,7 +13,8 @@ export default function Signup() {
     try {
       await signup(email, password);
     } catch (err) {
-      setError(err.response?.data?.message || 'Signup failed');
+      const message = err.response?.data?.message || err.message || 'Signup failed';
+      setError(message);
     }
   };
 
