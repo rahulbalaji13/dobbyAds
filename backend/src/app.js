@@ -7,6 +7,18 @@ require('dotenv').config();
 
 const app = express();
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    service: 'dobbyads-backend',
+    status: 'ok',
+    message: 'API is running. Use /api/* routes.',
+  });
+});
+
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
+
 const configuredOrigins = (process.env.FRONTEND_URL || '')
   .split(',')
   .map((origin) => origin.trim())

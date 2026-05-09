@@ -1,13 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 const AuthContext = createContext();
-
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
 
 export const useAuth = () => useContext(AuthContext);
 
